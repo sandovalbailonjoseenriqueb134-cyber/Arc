@@ -1,0 +1,49 @@
+import ezdxf
+
+def procesar_plano_arc(ruta_dxf):
+    """
+    Lee un archivo DXF y extrae las métricas geométricas
+    agrupadas por capa (layer).
+    """
+    try:
+        doc = ezdxf.readfile(ruta_dxf)
+    except IOError:
+        print(f"Error: No se pudo abrir el archivo '{ruta_dxf}'.")
+        return None
+    except ezdxf.DXFStructureError:
+        print(f"Error: El archivo '{ruta_dxf}' no es un DXF válido.")
+        return None
+
+    msp = doc.modelspace()
+    datos_extraidos = []
+
+    # Recorrer todas las polilíneas ligeras (LWPOLYLINE) del dibujo
+    for entity in msp.query('LWPOLYLINE'):
+        layer = entity.dxf.layer
+        
+        # Verificar si es un polígono cerrado (necesario para calcular área)
+        if entity.is_closed:
+            area = entity.area()
+            perimetro = entity.length()
+            
+            # Guardar propiedades en un diccionario estructurado
+            datos_extraidos.append({
+                "capa": layer,
+                "tipo_geometria": "Polígono Cerrado",
+                "area_m2": round(area, 4),
+                "perimetro_m": round(perimetro, 4)
+            })
+
+    return datos_extraidos
+
+# --- Módulo de prueba de Arc ---
+if __name__ == "__main__":
+    archivo_prueba = "mi_plano.dxf"
+    
+    print("=== ARC ENGINE: Extractor de Geometría ===")
+    resultados = procesar_plano_arc(archivo_prueba)
+    
+    if resultados:
+        print(f"Se encontraron {len(resultados)} elementos procesables:")
+        for item in resultados:
+            print(f"Capa: {item['capa']} | Área: {item['area_m2']} m² | Perímetro: {item['perimetro_m']} m")

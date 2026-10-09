@@ -1,0 +1,4 @@
+env_arc/
+__pycache__/
+*.xlsx
+.streamlit/secrets.toml
